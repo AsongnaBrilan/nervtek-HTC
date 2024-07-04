@@ -1,52 +1,53 @@
 // define pin numbers for motor
-#define DIR 
-#define EN 
+#define R_DIR 14
+#define R_EN 15
 
 // define pin numbers of encoders
-#define encoderPinA 
-#define encoderPinB
+#define R_encoderPinA 12
+#define R_encoderPinB 13
 volatile long encoderCount = 0;
 
 
 // PID program variables
-long prevTime = 0;
-float ePrev = 0;
-float eIntergral = 0;
+long previousTime = 0;
+float ePrevious = 0;
+float eIntegral = 0;
 
 void setup(){
   Serial.begin(9600);
 
-  pinMode(DIR, OUTPUT);
-  pinMode(EN, OUTPUT);
-  pinMode(encoderPinA, INPUT);
-  pinMode(encoderPinB, INPUT);
+  pinMode(R_DIR, OUTPUT);
+  pinMode(R_EN, OUTPUT);
+  pinMode(R_encoderPinA, INPUT);
+  pinMode(R_encoderPinB, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(encoderPinA), handleEncoder, RISING);
+  attachInterrupt(digitalPinToInterrupt(R_encoderPinA), R_handleEncoder, RISING); // interrupt for right encoder.
 }
 
 void loop(){
   //setpoint 
-  int target = 1000;
+  /*int target = 1000;
 
   //PID gains and computations
-  float kp = 0.0;
+  float kp = 2.0;
   float kd = 0.0;
   float ki = 0.0;
   float u = pidController(target, kp, kd, ki);
 
   //control motor
-  moveMotor(DIR, EN, u);
+  moveMotor(R_DIR, R_EN, u);
 
   //print statements for debugging
   Serial.print(target);
   Serial.print(", ");
-  Serial.println(encoderCount);
+  Serial.println(encoderCount);*/
+  motorTest();
 }
 
 // function called during interrupts
-void handleEncoder(){
-  if (digitalRead(encoderPinA) > digitalRead(encoderPinB)){
-    encoderCount++
+void R_handleEncoder(){
+  if (digitalRead(R_encoderPinA) > digitalRead(R_encoderPinB)){
+    encoderCount++;
   }
 
   else{
@@ -56,38 +57,43 @@ void handleEncoder(){
 
 void moveMotor(int dirPin, int pwmPin, float u){
   // max motor speed
-  float speed = fabs(u);
-  if (speed > 255){
-    speed = 255;
+  float Speed = fabs(u);
+  if (Speed > 255){
+    Speed = 255;
   }
 
   //set the direction
-  int direction = 1;
+  int Direction = 1;
   if (u < 0){
-    direction = 0;
+    Direction = 0;
   }
 
   // control the motor
-  digitalWrite(dirPin, direction);
-  analogWrite(pwmPin, speed);
+  digitalWrite(dirPin, Direction);
+  analogWrite(pwmPin, Speed);
 }
 
-void pidController(int target, float kp, float kd, float ki){
+float pidController(int target, float kp, float kd, float ki){
   // measure the time elapsed since the last iteration
-  long currentTine = micros();
-  float deltaT = ((float)(currentTime - preTime)) / 0.0e6;
+  long currentTime = micros();
+  float deltaT = ((float)(currentTime - previousTime)) / 0.0e6;
 
   //compute the error, derivative, and integral
   int e = encoderCount - target;
-  float eDerivative = (e - ePrev) / deltaT;
+  float eDerivative = (e - ePrevious) / deltaT;
   eIntegral = eIntegral + e * deltaT;
 
   //compute the PID control signal
   float u = (kp * e) + (kd * eDerivative) + (ki * eIntegral);
 
   //update variables for the next iteration
-  preTime = currentTime;
+  previousTime = currentTime;
   ePrevious = e;
 
   return u;
+}
+
+void motorTest(){
+  digitalWrite(R_EN, LOW);
+  digitalWrite(R_DIR, LOW);
 }
