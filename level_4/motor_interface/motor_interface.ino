@@ -31,9 +31,9 @@ unsigned long prevTime{0};
 const int PERIOD = 50; // this means 50 milliseconds
 
 // PID control variables
-unsigned long previousTimePID
+unsigned long previousTimePID = 0;
 float ePrevious = 0;
-float eIntegral
+float eIntegral = 0;
 void setup() {
   Serial.begin(9600);
   pinMode(R_DIR, OUTPUT);
@@ -80,9 +80,11 @@ void loop() {
     prevTime = currentTime;
   }
 
-  if (distance == MAX_DISTANCE) Drive(100, 100, 0, 1); //Forward
-  if (distance > MAX_DISTANCE) Drive(90, 0, 0, 1); //Right
-  if (distance < MAX_DISTANCE) Drive(0, 90, 0, 1); //LEFT
+  //if (distance == MAX_DISTANCE) Drive(100, 100, 0, 1); //Forward
+  //if (distance > MAX_DISTANCE) Drive(90, 0, 0, 1); //Right
+  //if (distance < MAX_DISTANCE) Drive(0, 90, 0, 1); //LEFT
+
+  PID_control();
 
 }
 
@@ -135,6 +137,28 @@ void Drive(int R_speed, int L_speed, int r_dir, int l_dir) {
   analogWrite(L_EN, L_speed);// turns the microcontroller
 }
 
+void PID_moveMotor(int R_dir, int L_dir, int R_en, int L_en, float u) {
+  // maximum motor speed
+  float Speed = fabs(u);
+  if (Speed > 255) {
+    Speed = 255;
+  }
+
+  // set the direction
+  int R_direction = 0;
+  int L_direction = 0;
+  if (u < 0) {
+    R_direction = 1;
+    L_direction = 0;
+  }
+
+  //control motor
+  digitalWrite(R_dir, R_direction);
+  analogWrite(R_en, Speed);
+  digitalWrite(L_dir, L_direction);
+  analogWrite(R_en, Speed);
+}
+
 void ut_measurment() {
   digitalWrite(trig_pin, LOW);
   delayMicroseconds(2);
@@ -152,4 +176,34 @@ void ut_measurment() {
   Serial.println(distance);
 
   //return distance;
+}
+
+void PID_control() {
+  //PID gains
+
+  float kp = 0;
+  float ki = 0;
+  float kd = 0;
+
+  float u = pidController(MAX_DISTANCE, kp, ki, kd);
+
+  Drive(80, 80, 0, 1);
+}
+
+float pidController(int target, float kp, float ki, float kd) {
+  currentTimePID = micros();
+  float deltaT = ((float)(currentTimePID - previousTimePID)) / 1.0e6;
+
+  // compute error, derivative and integral for both motors
+  int e = distance - MAX_DISTANCE;
+  float eDerivative = (e - ePrevious) / deltaT;
+  eIntegral = eIntegral + e * deltaT;
+
+  float u = (kp * e) + (kd * eDerivative) + (ki * eIntegral);
+
+  previousTimePID = currentTimePID;
+  ePrevious = e;
+
+  return u;
+
 }
