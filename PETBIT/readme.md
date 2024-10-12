@@ -26,4 +26,4 @@ Now load the G-code to the SD card and slot it in the Smart Display
 
 With this your are done setting up the machine!!!
 
-This project is highly inspired by the Hardware Community.
+This project is highly inspired and supported by the Hardware Community.
