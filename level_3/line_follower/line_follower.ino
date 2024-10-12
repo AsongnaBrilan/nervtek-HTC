@@ -19,7 +19,7 @@
 // these constants are used to allow you to make your motor configuration
 // line up with function names like forward.  Value can be 1 or -1
 const int offsetA = 1;
-const int offsetB = 1;
+const int offsetB = -1;
 
 
 Motor motor1 = Motor(IN1, IN2, PWMA, offsetA, PWMA); // right motors
@@ -43,7 +43,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 int duration, distance;
 int P, D, I, previousError, PIDvalue, error;
 int lsp, rsp;
-int lfspeed = 140;
+int lfspeed = 100;
 
 float Kp = 0;
 float Kd = 0;
@@ -61,18 +61,19 @@ void setup()
   pinMode(buzzer, OUTPUT);
 
 
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
+    for (;;);
   }
   delay(2000);
   display.clearDisplay();
 
-  display.setTextSize(1);
+  display.setTextSize(2);
   display.setTextColor(WHITE);
-  display.setCursor(40, 10);
+  display.setCursor(30, 5);
   // Display static text
   display.println("F-DASH");
+  display.setTextSize(1);
   display.setCursor(40, 20);
   // Display static text
   display.println("eat fast");
@@ -83,34 +84,65 @@ void setup()
 void loop()
 {
   while (digitalRead(11) == LOW) {}
-    delay(1000);
-    calibrate();
-    while (digitalRead(12) == LOW ) {}
-    delay(1000);
+  delay(1000);
+  calibrate();
+  while (digitalRead(12) == LOW ) {}
+  delay(1000);
 
-    while (1)
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(30, 10);
+  display.print("Delivery");
+  display.display();
+
+  while (1)
+  {
+    if (analogRead(1) > threshold[1] && analogRead(5) < threshold[5] )  // table 1, left turn
     {
-    if (analogRead(1) > threshold[1] && analogRead(5) < threshold[5] )  // make a left turn
-    {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setCursor(35, 10);
+      display.print("TABLE 1 Left");
+      display.display();
       lsp = 0; rsp = lfspeed;
       motor1.drive(lfspeed);
       motor2.drive(0);
     }
 
-    else if (analogRead(5) > threshold[5] && analogRead(1) < threshold[1])  // make a right turn
-    { lsp = lfspeed; rsp = 0;
+    if (analogRead(5) > threshold[5] && analogRead(1) < threshold[1])  // table 2, right turn
+    {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setCursor(35, 10);
+      display.print("TABLE 2 Righ");
+      display.display();
+      lsp = lfspeed; rsp = 0;
       motor1.drive(0);
       motor2.drive(lfspeed);
+   
     }
+
+    if (analogRead(5) > threshold[5] && analogRead(1) > threshold[1]) // table 3, left turn
+    {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setCursor(35, 10);
+      display.print("TABLE 3");
+      display.display();
+      lsp = 0; rsp = lfspeed;
+      motor1.drive(lfspeed);
+      motor2.drive(0);
+    }
+
     else if (analogRead(3) > threshold[3])
     {
-      Kp = 0.0006 * (1000 - analogRead(3)); //kp = 0.0006 // line following block
+      Kp = 40  * (1000 - analogRead(3)); //kp = 0.0006 // line following block
       Kd = 10 * Kp;
       //Ki = 0.0001;
       //linefollow();
       FDASH_Delivery();
     }
-    }
+  }
 }
 
 void linefollow()
@@ -146,6 +178,11 @@ void linefollow()
 
 void calibrate()
 {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(30, 10);
+  display.print("Calibrating");
+  display.display();
   for ( int i = 1; i < 6; i++)
   {
     minValues[i] = analogRead(i);
@@ -209,7 +246,4 @@ void FDASH_Delivery() {
     tone(buzzer, 2000);
   }
 }
-
-void Display(){
-  
-}
+ 

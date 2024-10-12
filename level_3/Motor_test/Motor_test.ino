@@ -17,8 +17,8 @@
 #define ENB 6
 //#define STBY 5
 
-const int offsetA = -1;
-const int offsetB = -1;
+const int offsetA = 1;
+const int offsetB = -1; // - = forward
 
 Motor motor1 = Motor(IN1, IN2, PWMA, offsetA, ENA);
 Motor motor2 = Motor(IN3, IN4, PWMB, offsetB, ENB);
